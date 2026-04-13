@@ -86,12 +86,25 @@ async function callBOSBaziAPI(nameCn, datetime, gender) {
 
     const response = await axios.post(url, payload, {
       headers,
-      timeout: 15000
+      timeout: 15000,
+      validateStatus: () => true  // ← accept 400 too, BOS always returns 400
     });
 
     console.log('📥 BOS BaZi Response status:', response.status);
 
-    return { success: true, html: response.data };
+    // BOS returns data inside error message: "content_error: <body>...</body>"
+    let htmlContent = '';
+    const responseData = response.data;
+
+    if (typeof responseData === 'string') {
+      htmlContent = responseData;
+    } else if (responseData && responseData.message) {
+      htmlContent = responseData.message;
+    }
+
+    console.log('📄 Raw content:', htmlContent.substring(0, 300));
+
+    return { success: true, html: htmlContent };
 
   } catch (error) {
     console.error('❌ BOS BaZi API Error:', error.message);
